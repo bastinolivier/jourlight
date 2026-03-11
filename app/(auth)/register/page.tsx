@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -36,6 +37,19 @@ export default function RegisterPage() {
       if (!res.ok) {
         setError(data.error || 'Une erreur est survenue.')
         setLoading(false)
+        return
+      }
+
+      // Auto-login after successful registration
+      const signInResult = await signIn('credentials', {
+        email: form.email,
+        password: form.password,
+        redirect: false,
+      })
+
+      if (signInResult?.error) {
+        setError('Compte créé mais connexion automatique échouée. Veuillez vous connecter.')
+        router.push('/login')
         return
       }
 

@@ -3,12 +3,15 @@ import bcrypt from 'bcryptjs'
 import prisma from '@/lib/db/prisma'
 
 function generateSlug(firstName: string, lastName: string): string {
-  const base = `${firstName}-${lastName}`
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-  const random = Math.random().toString(36).slice(2, 7)
+  const normalize = (s: string) =>
+    s
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+  const base = `${normalize(firstName)}-${normalize(lastName)}`
+  const random = Math.random().toString(36).slice(2, 6)
   return `${base}-${random}`
 }
 

@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest) {
     where: { id: profile.id },
     data: {
       displayName: displayName ?? profile.displayName,
-      bio: bio ?? null,
+      bio: bio || null,
       location: location || null,
       yearsExperience: typeof yearsExperience === 'number' ? yearsExperience : profile.yearsExperience,
       status: status ?? profile.status,
