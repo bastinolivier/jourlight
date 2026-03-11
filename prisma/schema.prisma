@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  TECHNICIAN
+  PRODUCTION
+  ADMIN
+}
+
+enum Specialty {
+  SON
+  LUMIERE
+  PLATEAU
+  VIDEO
+  RIGGING
+  MACHINERIE
+  PYROTECHNIE
+  AUTRE
+}
+
+enum TechnicianStatus {
+  INTERMITTENT
+  FREELANCE
+  SALARIE
+}
+
+enum SkillCategory {
+  SOFTWARE
+  HARDWARE
+  CERTIFICATION
+  TECHNIQUE
+}
+
+enum SkillLevel {
+  NOTIONS
+  CONFIRME
+  EXPERT
+}
+
+enum ProjectType {
+  SPECTACLE
+  TOURNEE
+  FESTIVAL
+  EVENEMENT
+  CORPORATE
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  UNAVAILABLE
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum ContactStatus {
+  PENDING
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(TECHNICIAN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   TechnicianProfile?
+  loginLogs LoginLog[]
+
+  @@map("users")
+}
+
+model LoginLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String
+  role      String?
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("login_logs")
+}
+
+model TechnicianProfile {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  slug            String           @unique
+  displayName     String
+  avatar          String?
+  bio             String?
+  specialties     Specialty[]
+  status          TechnicianStatus @default(INTERMITTENT)
+  yearsExperience Int              @default(0)
+  location        String?
+  latitude        Float?
+  longitude       Float?
+  mobility        Boolean          @default(true)
+  languages       String[]
+  website         String?
+  linkedin        String?
+  siret           String?
+  isVerified      Boolean          @default(false)
+  isPublic        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills       Skill[]
+  projects     PortfolioProject[]
+  media        Media[]
+  availability Availability[]
+  contacts     ContactRequest[]
+
+  @@map("technician_profiles")
+}
+
+model Skill {
+  id        String        @id @default(cuid())
+  profileId String
+  category  SkillCategory
+  name      String
+  level     SkillLevel    @default(CONFIRME)
+  order     Int           @default(0)
+
+  profile TechnicianProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("skills")
+}
+
+model PortfolioProject {
+  id          String      @id @default(cuid())
+  profileId   String
+  title       String
+  role        String
+  type        ProjectType
+  year        Int?
+  startDate   DateTime?
+  endDate     DateTime?
+  description String?
+  location    String?
+  client      String?
+  venue       String?
+  featured    Boolean     @default(false)
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  profile TechnicianProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  media   Media[]
+
+  @@map("portfolio_projects")
+}
+
+model Media {
+  id        String    @id @default(cuid())
+  profileId String
+  projectId String?
+  type      MediaType
+  url       String
+  thumbnail String?
+  caption   String?
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  profile TechnicianProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  project PortfolioProject?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@map("media")
+}
+
+model Availability {
+  id        String             @id @default(cuid())
+  profileId String
+  date      DateTime           @db.Date
+  status    AvailabilityStatus @default(AVAILABLE)
+  note      String?
+
+  profile TechnicianProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, date])
+  @@map("availability")
+}
+
+model ContactRequest {
+  id              String        @id @default(cuid())
+  profileId       String
+  senderName      String
+  senderEmail     String
+  senderOrg       String?
+  message         String
+  missionDate     DateTime?
+  missionLocation String?
+  missionRole     String?
+  status          ContactStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  profile TechnicianProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("contact_requests")
+}
